@@ -17,9 +17,10 @@ def respond(
         history_openai_format.append(ChatMessage(role="user", content=human))
         history_openai_format.append(ChatMessage(role="assistant", content=assistant))
 
-    response, _ = bot.chat(message, chat_history=history_openai_format)
+    response = bot.stream_chat(message, chat_history=history_openai_format)
+
     output = ""
-    for new_token in response:
+    for new_token in response.response_gen:
         if new_token != "":
             output += new_token
             yield output
