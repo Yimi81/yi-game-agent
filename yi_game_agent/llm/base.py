@@ -11,6 +11,7 @@ from .response import ModelResponse
 from ..exception import ResponseParsingError
 from ..message import Msg
 from ..constants import _DEFAULT_MAX_RETRIES, _DEFAULT_RETRY_INTERVAL
+from ..utils.common import _get_timestamp, _convert_to_str
 
 
 def _response_parse_decorator(
@@ -79,6 +80,7 @@ def _response_parse_decorator(
 
     return checking_wrapper
 
+
 class _ModelWrapperMeta(ABCMeta):
     """A meta call to replace the model wrapper's __call__ function with
     wrapper about error handling."""
@@ -98,9 +100,7 @@ class _ModelWrapperMeta(ABCMeta):
             if hasattr(cls, "model_type"):
                 cls._type_registry[cls.model_type] = cls
                 if hasattr(cls, "deprecated_model_type"):
-                    cls._deprecated_type_registry[
-                        cls.deprecated_model_type
-                    ] = cls
+                    cls._deprecated_type_registry[cls.deprecated_model_type] = cls
         super().__init__(name, bases, attrs)
 
 
@@ -133,7 +133,7 @@ class ModelWrapperBase(metaclass=_ModelWrapperMeta):
         self.model_name = model_name
 
         logger.info(f"Initialize model by configuration [{config_name}]")
-    
+
     @classmethod
     def get_wrapper(cls, model_type: str) -> Type[ModelWrapperBase]:
         """Get the specific model wrapper"""
@@ -169,4 +169,125 @@ class ModelWrapperBase(metaclass=_ModelWrapperMeta):
             f"Model Wrapper [{type(self).__name__}]"
             f" is missing the required `format` method",
         )
-  
+
+    @staticmethod
+    def format_for_common_chat_models(
+        *args: Union[Msg, Sequence[Msg]],
+    ) -> List[dict]:
+        """A common format strategy for chat models, which will format the
+        input messages into a system message (if provided) and a user message.
+
+        Note this strategy maybe not suitable for all scenarios,
+        and developers are encouraged to implement their own prompt
+        engineering strategies.
+
+        The following is an example:
+
+        .. code-block:: python
+
+            prompt1 = model.format(
+                Msg("system", "You're a helpful assistant", role="system"),
+                Msg("Bob", "Hi, how can I help you?", role="assistant"),
+                Msg("user", "What's the date today?", role="user")
+            )
+
+            prompt2 = model.format(
+                Msg("Bob", "Hi, how can I help you?", role="assistant"),
+                Msg("user", "What's the date today?", role="user")
+            )
+
+        The prompt will be as follows:
+
+        .. code-block:: python
+
+            # prompt1
+            [
+                {
+                    "role": "system",
+                    "content": "You're a helpful assistant"
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "## Conversation History\\n"
+                        "Bob: Hi, how can I help you?\\n"
+                        "user: What's the date today?"
+                    )
+                }
+            ]
+
+            # prompt2
+            [
+                {
+                    "role": "user",
+                    "content": (
+                        "## Conversation History\\n"
+                        "Bob: Hi, how can I help you?\\n"
+                        "user: What's the date today?"
+                    )
+                }
+            ]
+
+
+        Args:
+            args (`Union[Msg, Sequence[Msg]]`):
+                The input arguments to be formatted, where each argument
+                should be a `Msg` object, or a list of `Msg` objects.
+                In distribution, placeholder is also allowed.
+
+        Returns:
+            `List[dict]`:
+                The formatted messages.
+        """
+        if len(args) == 0:
+            raise ValueError(
+                "At least one message should be provided. An empty message "
+                "list is not allowed.",
+            )
+
+        # Parse all information into a list of messages
+        input_msgs = []
+        for _ in args:
+            if _ is None:
+                continue
+            if isinstance(_, Msg):
+                input_msgs.append(_)
+            elif isinstance(_, list) and all(isinstance(__, Msg) for __ in _):
+                input_msgs.extend(_)
+            else:
+                raise TypeError(
+                    f"The input should be a Msg object or a list "
+                    f"of Msg objects, got {type(_)}.",
+                )
+
+        # record dialog history as a list of strings
+        dialogue = []
+        sys_prompt = None
+        for i, unit in enumerate(input_msgs):
+            if i == 0 and unit.role == "system":
+                # if system prompt is available, place it at the beginning
+                sys_prompt = _convert_to_str(unit.content)
+            else:
+                # Merge all messages into a conversation history prompt
+                dialogue.append(
+                    f"{unit.name}: {_convert_to_str(unit.content)}",
+                )
+
+        content_components = []
+
+        # The conversation history is added to the user message if not empty
+        if len(dialogue) > 0:
+            content_components.extend(["## Conversation History"] + dialogue)
+
+        messages = [
+            {
+                "role": "user",
+                "content": "\n".join(content_components),
+            },
+        ]
+
+        # Add system prompt at the beginning if provided
+        if sys_prompt is not None:
+            messages = [{"role": "system", "content": sys_prompt}] + messages
+
+        return messages

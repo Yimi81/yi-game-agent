@@ -47,7 +47,7 @@ class Msg:
         self,
         name: str,
         content: Any,
-        role: Union[str, Literal["system", "user", "assistant"]] = "assistant",
+        role: Union[str, Literal["system", "user", "assistant", "tool"]] = "assistant",
         url: Optional[Union[str, List[str]]] = None,
         metadata: Optional[dict] = None,
         echo: bool = False,
@@ -74,7 +74,7 @@ class Msg:
                 The name of who generates the message.
             content (`Any`):
                 The content of the message.
-            role (`Union[str, Literal["system", "user", "assistant"]]`):
+            role (`Union[str, Literal["system", "user", "assistant", "tool"]]`,):
                 The role of the message sender.
             url (`Optional[Union[str, List[str]]`, defaults to `None`):
                 The url of the message.
