@@ -6,7 +6,7 @@ from enum import IntEnum
 
 from pathlib import Path
 
-PACKAGE_NAME = "yi_game_agent"
+PACKAGE_NAME = "yi-game-agent"
 MSG_TOKEN = f"[{PACKAGE_NAME}_msg]"
 
 
@@ -28,11 +28,11 @@ _DEFAULT_CACHE_DIR = str(
         ),
     )
     / ".cache"
-    / "yi_game_agent",
+    / "yi-game-agent",
 )
 _DEFAULT_CFG_NAME = ".config"
 _DEFAULT_IMAGE_NAME = "image_{}_{}.png"
-_DEFAULT_SQLITE_DB_NAME = "yi_game_agent.db"
+_DEFAULT_SQLITE_DB_NAME = "yi-game-agent.db"
 
 
 # for model wrapper

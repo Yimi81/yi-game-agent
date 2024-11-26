@@ -10,6 +10,14 @@ from .openai import (
     OpenAIChatWrapper,
 )
 
+__all__ = [
+    "ModelWrapperBase",
+    "ModelResponse",
+    "OpenAIWrapperBase",
+    "OpenAIChatWrapper",
+]
+
+
 def _get_model_wrapper(model_type: str) -> Type[ModelWrapperBase]:
     """Get the specific type of model wrapper
 

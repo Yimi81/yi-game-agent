@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""A manager for AgentScope."""
+"""A manager for yi-game-agent."""
 import os
 from typing import Union, Any
 from copy import deepcopy

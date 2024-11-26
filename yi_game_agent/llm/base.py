@@ -1,6 +1,6 @@
+from __future__ import annotations
 import time
 import inspect
-from __future__ import annotations
 from abc import ABCMeta
 from functools import wraps
 from typing import Sequence, Any, Callable, Union, List, Type

@@ -91,7 +91,7 @@ class OpenAIWrapperBase(ModelWrapperBase, ABC):
             model_name = config_name
             logger.warning("model_name is not set, use config_name instead.")
 
-        super().__init__(config_name, model_name, **kwargs)
+        super().__init__(config_name=config_name, model_name=model_name, **kwargs)
 
         self.generate_args = generate_args or {}
 
@@ -166,8 +166,8 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
                 The extra keyword arguments used in openai api generation,
                 e.g. `temperature`, `seed`.
         """
-        super.__init__(
-            config_name,
+        super().__init__(
+            config_name=config_name,
             model_name=model_name,
             api_key=api_key,
             organization=organization,
