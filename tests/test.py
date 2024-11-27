@@ -9,11 +9,12 @@ qwen_model_config = {
     "api_key": "test",
     "client_args": {
         "base_url": "http://localhost:8000/v1",
-    }
+    },
+    "stream": True
 }
 
 yi_game_agent.init(model_configs=[qwen_model_config])
 
 agent1 = DialogAgent(name="Guofeng Yi", model_config_name="qwen2.5-14b-chat", sys_prompt="You are a new student in Anhui University.")
 
-agent1()
+response = agent1(Msg(name="user", role="user", content="你好，你是谁"))

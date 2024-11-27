@@ -13,6 +13,7 @@ from yi_game_agent.logging import log_stream_msg, log_msg
 from yi_game_agent.manager import ModelManager
 from yi_game_agent.message import Msg
 from yi_game_agent.memory import TemporaryMemory
+from yi_game_agent.llm import ModelResponse
 
 class AgentBase(Operator):
     """Base class for all agents.
@@ -67,7 +68,7 @@ class AgentBase(Operator):
         """Generate an agent_id of this agent instance."""
         return uuid.uuid4().hex
     
-    def reply(self, x: Optional[Union[Msg, Sequence[Msg]]] = None) -> Msg:
+    def reply(self, x: Optional[Union[Msg, Sequence[Msg]]] = None) -> Union[Msg, ModelResponse]:
         """Define the actions taken by this agent.
 
         Args:

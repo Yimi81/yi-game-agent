@@ -10,7 +10,7 @@ def _default_serialize(obj: Any) -> Any:
     if hasattr(obj, "__module__") and hasattr(obj, "__class__"):
         # To avoid circular import, we hard code the module name here
         if (
-            obj.__module__ == "yi-game-agent.message.msg"
+            obj.__module__ == "yi_game_agent.message.msg"
             and obj.__class__.__name__ == "Msg"
         ):
             return obj.to_dict()

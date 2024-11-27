@@ -6,7 +6,7 @@ from loguru import logger
 
 from ..message import Msg
 from .agent import AgentBase
-
+from ..llm import ModelResponse
 
 class DialogAgent(AgentBase):
     """A simple agent used to perform a dialogue. Your can set its role by
@@ -46,7 +46,7 @@ class DialogAgent(AgentBase):
                 f"Unused keyword arguments are provided: {kwargs}",
             )
 
-    def reply(self, x: Optional[Union[Msg, Sequence[Msg]]] = None) -> Msg:
+    def reply(self, x: Optional[Union[Msg, Sequence[Msg]]] = None) -> Union[Msg, ModelResponse]:
         """Reply function of the agent. Processes the input data,
         generates a prompt using the current dialogue memory and system
         prompt, and invokes the language model to produce a response. The
@@ -85,4 +85,7 @@ class DialogAgent(AgentBase):
         if self.memory:
             self.memory.add(msg)
 
-        return msg
+        if self.model.stream == False:
+            return msg
+        else:
+            return response

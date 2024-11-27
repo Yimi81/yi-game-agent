@@ -5,6 +5,7 @@ from typing import Type
 from loguru import logger
 
 from .base import ModelWrapperBase
+from .response import ModelResponse
 from .openai import (
     OpenAIWrapperBase,
     OpenAIChatWrapper,

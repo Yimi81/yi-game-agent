@@ -1,7 +1,7 @@
 import os
 from argparse import ArgumentParser
 import gradio as gr
-from yi_game_agent.indoor_design_agent import create_agent
+from tests.indoor_design_agent import create_agent
 from llama_index.core.llms import ChatMessage
 
 def respond(
@@ -17,6 +17,7 @@ def respond(
         history_openai_format.append(ChatMessage(role="user", content=human))
         history_openai_format.append(ChatMessage(role="assistant", content=assistant))
 
+    print(message)
     response = bot.stream_chat(message, chat_history=history_openai_format)
 
     output = ""
