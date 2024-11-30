@@ -22,11 +22,7 @@ def respond(
 
     response = bot(Msg(name="user", role="user", content=message))
 
-    output = ""
-    for new_token, text in response.stream:
-        if new_token != "":
-            output += new_token
-            yield output
+    return response.content
 
 
 """

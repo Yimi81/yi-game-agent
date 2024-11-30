@@ -11,11 +11,14 @@ from .openai import (
     OpenAIChatWrapper,
 )
 
+from .litellm import LiteLLMChatWrapper
+
 __all__ = [
     "ModelWrapperBase",
     "ModelResponse",
     "OpenAIWrapperBase",
     "OpenAIChatWrapper",
+    "LiteLLMChatWrapper",
 ]
 
 

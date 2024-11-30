@@ -68,7 +68,7 @@ class AgentBase(Operator):
         """Generate an agent_id of this agent instance."""
         return uuid.uuid4().hex
     
-    def reply(self, x: Optional[Union[Msg, Sequence[Msg]]] = None) -> Union[Msg, ModelResponse]:
+    def reply(self, x: Optional[Union[Msg, Sequence[Msg]]] = None) -> Msg:
         """Define the actions taken by this agent.
 
         Args:

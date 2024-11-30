@@ -13,8 +13,19 @@ qwen_model_config = {
     "stream": True
 }
 
-yi_game_agent.init(model_configs=[qwen_model_config])
+azure_model_config = {
+    "api_base": "https://ai2team.openai.azure.com/",
+    "api_key": "3d97a348a4a24119ac590d12a4751509",
+    "api_version": "2024-06-01",
+    "config_name": "gpt4o-mini",
+    "model_type": "litellm_chat",
+    "model_name": "azure/ai2team-gpt4o",
+    "stream": True
+}
 
-agent1 = DialogAgent(name="Guofeng Yi", model_config_name="qwen2.5-14b-chat", sys_prompt="You are a new student in Anhui University.")
+yi_game_agent.init(model_configs=[qwen_model_config, azure_model_config])
 
-response = agent1(Msg(name="user", role="user", content="你好，你是谁"))
+agent1 = DialogAgent(name="Guofeng Yi", model_config_name="gpt4o-mini", sys_prompt="You are a new student in Anhui University.")
+
+response = agent1(Msg(name="user", role="user", content="你好，你是谁, 谁开发的你"))
+print(response.id)
