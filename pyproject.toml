@@ -13,6 +13,7 @@ gradio = "^5.4.0"
 loguru = "^0.7.2"
 psutil = "^6.1.0"
 litellm = "^1.53.1"
+docstring-parser = "^0.16"
 
 
 [build-system]

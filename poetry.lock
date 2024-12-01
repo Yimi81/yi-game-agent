@@ -630,6 +630,17 @@ files = [
 ]
 
 [[package]]
+name = "docstring-parser"
+version = "0.16"
+description = "Parse Python docstrings in reST, Google and Numpydoc format"
+optional = false
+python-versions = ">=3.6,<4.0"
+files = [
+    {file = "docstring_parser-0.16-py3-none-any.whl", hash = "sha256:bf0a1387354d3691d102edef7ec124f219ef639982d096e26e3b60aeffa90637"},
+    {file = "docstring_parser-0.16.tar.gz", hash = "sha256:538beabd0af1e2db0146b6bd3caa526c35a34d61af9fd2887f3a8a27a739aa6e"},
+]
+
+[[package]]
 name = "fastapi"
 version = "0.115.4"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
@@ -3715,4 +3726,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "1fa16ddde22484c06fc38f277aa7e76787fd19c7f16d0925585f990c6fadec81"
+content-hash = "bf0d703a18b44ec01a9b859674a189117e4e3b679eae238e020c1f0a074c7727"
