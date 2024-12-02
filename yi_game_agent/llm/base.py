@@ -267,10 +267,19 @@ class ModelWrapperBase(metaclass=_ModelWrapperMeta):
             if i == 0 and unit.role == "system":
                 # if system prompt is available, place it at the beginning
                 sys_prompt = _convert_to_str(unit.content)
+            elif unit.tool_calls is None:
+                if unit.role == "tool":
+                    dialogue.append(
+                    f"{unit.name}: {_convert_to_str(unit.tool_call_id)}, {_convert_to_str(unit.content)}",
+                    )
+                else:
+                    # Merge all messages into a conversation history prompt
+                    dialogue.append(
+                        f"{unit.name}: {_convert_to_str(unit.content)}",
+                    )
             else:
-                # Merge all messages into a conversation history prompt
                 dialogue.append(
-                    f"{unit.name}: {_convert_to_str(unit.content)}",
+                    f"{unit.name}: {_convert_to_str(unit.tool_calls)}",
                 )
 
         content_components = []

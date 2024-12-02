@@ -403,6 +403,25 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
                         model_name,
                     )
                     messages.append(formatted_msg)
+                elif (
+                    arg.role == "assistant"
+                    and arg.content is None
+                    and arg.tool_calls is not None
+                ):
+                    messages.append(
+                        {
+                            "role": arg.role,
+                            "tool_calls": arg.tool_calls,
+                        },
+                    )
+                elif arg.role == "tool":
+                    messages.append(
+                        {
+                            "role": arg.role,
+                            "tool_call_id": arg.tool_call_id,
+                            "content": _convert_to_str(arg.content),
+                        },
+                    )
                 else:
                     messages.append(
                         {
