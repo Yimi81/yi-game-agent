@@ -180,9 +180,9 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
 
     def __call__(
         self,
+        name: str,
         messages: list[dict],
         stream: Optional[bool] = None,
-        tools: list[dict] = None,
         **kwargs: Any,
     ) -> ModelResponse:
         """Processes a list of messages to construct a payload for the OpenAI
@@ -288,9 +288,18 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
             response = response.model_dump()
 
             if _verify_text_content_in_openai_message_response(response):
+                openai_message = response["choices"][0]["message"]
+
+                if openai_message["tool_calls"]:
+                    return ModelResponse(
+                        message=Msg(name=name, content=openai_message["content"], additional_kwargs={"tool_calls": openai_message["tool_calls"]}, role=openai_message["role"]),
+                        text=openai_message["content"],
+                        raw=response,)
+                
                 # return response
                 return ModelResponse(
-                    text=response["choices"][0]["message"]["content"],
+                    message=Msg(name=name, content=openai_message["content"], role=openai_message["role"]),
+                    text=openai_message["content"],
                     raw=response,
                 )
             else:
@@ -476,3 +485,33 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
         else:
             # The OpenAI library maybe re-used to support other models
             return ModelWrapperBase.format_for_common_chat_models(*args)
+
+    def get_tool_calls_from_response(
+        self,
+        response: "ModelResponse",
+        error_on_no_tool_call: bool = True,
+    ) -> List[dict]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            argument_dict = tool_call["function"]["arguments"]
+
+            tool_selections.append(
+                {
+                    "tool_id": tool_call["id"],
+                    "tool_name": tool_call["function"]["name"],
+                    "tool_kwargs": argument_dict,
+                }
+            )
+
+        return tool_selections

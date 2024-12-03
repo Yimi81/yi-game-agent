@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """Parser for model response."""
 import json
-from typing import Optional, Sequence, Any, Generator, Union, Tuple
+import pydantic
 
+from typing import Optional, Sequence, Any, Generator, Union, Tuple
 from ..utils.common import _is_json_serializable
+from ..message import Msg
 
 
 class ModelResponse:
@@ -15,6 +17,7 @@ class ModelResponse:
 
     def __init__(
         self,
+        message: Msg,
         text: str = None,
         embedding: Sequence = None,
         image_urls: Sequence[str] = None,
@@ -38,6 +41,7 @@ class ModelResponse:
             stream (`Generator`, optional):
                 The stream data returned by the model.
         """
+        self.message = message
         self._text = text
         self.embedding = embedding
         self.image_urls = image_urls

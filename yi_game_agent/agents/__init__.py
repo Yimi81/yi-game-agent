@@ -3,9 +3,11 @@
 from .agent import AgentBase
 from .operator import Operator
 from .dialog_agent import DialogAgent
+from .function_calling_agent import FnCallAgent
 
 __all__ = [
     "AgentBase",
     "Operator",
     "DialogAgent",
+    "FnCallAgent"
 ]

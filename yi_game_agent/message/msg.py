@@ -51,8 +51,7 @@ class Msg:
     - id:           the identity of the message
     - name:         who sends the message
     - content:      the message content
-    - tool_calls:   the tool calls in the message
-    - tool_call_id: the tool call id
+    - additional_kwargs: the additional_kwargs of the message
     - role:         the sender role chosen from 'system', 'user', 'assistant'
     - url:          the url(s) refers to multimodal content
     - metadata:     some additional information
@@ -63,8 +62,7 @@ class Msg:
         "id",
         "name",
         "content",
-        "tool_calls",
-        "tool_call_id",
+        "additional_kwargs",
         "role",
         "url",
         "metadata",
@@ -76,8 +74,7 @@ class Msg:
         self,
         name: str,
         content: Any,
-        tool_calls: Optional[List[dict]] = None,
-        tool_call_id: Optional[str] = None,
+        additional_kwargs: Optional[dict] = None,
         role: Union[str, Literal["system", "user", "assistant", "tool"]] = "assistant",
         url: Optional[Union[str, List[str]]] = None,
         metadata: Optional[dict] = None,
@@ -122,8 +119,7 @@ class Msg:
         self.id = uuid4().hex
         self.name = name
         self.content = content
-        self.tool_calls = tool_calls
-        self.tool_call_id = tool_call_id
+        self.additional_kwargs = additional_kwargs
         self.role = role
         self.url = url
         self.metadata = metadata
@@ -161,14 +157,9 @@ class Msg:
         return self._content
 
     @property
-    def tool_calls(self) -> Optional[List[dict]]:
+    def additional_kwargs(self) -> Optional[dict]:
         """The content of the message."""
-        return self._tool_calls
-
-    @property
-    def _tool_call_id(self) -> Optional[str]:
-        """The content of the message."""
-        return self._tool_call_id
+        return self._additional_kwargs
     
     @property
     def role(self) -> Literal["system", "user", "assistant"]:
@@ -212,21 +203,16 @@ class Msg:
             )
         self._content = value
 
-    @tool_calls.setter  # type: ignore[no-redef]
-    def tool_calls(self, value: Optional[List[dict]]) -> None:
-        """Set the tool_calls of the message."""
+    @additional_kwargs.setter  # type: ignore[no-redef]
+    def additional_kwargs(self, value: Optional[dict]) -> None:
+        """Set the additional_kwargs of the message."""
         if not is_serializable(value):
             logger.warning(
-                f"The tool_calls of {type(value)} is not serializable, which "
+                f"The additional_kwargs of {type(value)} is not serializable, which "
                 f"may cause problems.",
             )
-        self._tool_calls = value
+        self._additional_kwargs = value
 
-
-    @tool_calls.setter  # type: ignore[no-redef]
-    def tool_call_id(self, value: Optional[str]) -> None:
-        """Set the tool_call_id of the message."""
-        self._tool_call_id = value
 
     @role.setter  # type: ignore[no-redef]
     def role(self, value: Literal["system", "user", "assistant"]) -> None:
@@ -290,6 +276,7 @@ class Msg:
             and self.id == value.id
             and self.name == value.name
             and self.content == value.content
+            and self.additional_kwargs == value.additional_kwargs
             and self.role == value.role
             and self.url == value.url
             and self.metadata == value.metadata
@@ -344,6 +331,7 @@ class Msg:
         obj = cls(
             name=serialized_dict["name"],
             content=serialized_dict["content"],
+            additional_kwargs=serialized_dict["additional_kwargs"],
             role=serialized_dict["role"],
             url=serialized_dict["url"],
             metadata=serialized_dict["metadata"],

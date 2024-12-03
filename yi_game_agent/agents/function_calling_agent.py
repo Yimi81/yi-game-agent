@@ -35,10 +35,25 @@ class FnCallAgent(AgentBase):
         """The reply method of the agent"""
         self.memory.add(x)
 
-        for _ in range(self.max_iters):
-            prompt = self.model.format(
-                Msg("system", self.sys_prompt, role="system"),
-                self.memory and self.memory.get_memory() or x,  # type: ignore[arg-type]
-            )
+        prompt = self.model.format(
+            Msg("system", self.sys_prompt, role="system"),
+            self.memory and self.memory.get_memory() or x,  # type: ignore[arg-type]
+        )
 
-            response = self.model(prompt, tools=self.service_toolkit.json_schemas)
+        tools = []
+        for tool in self.service_toolkit.service_funcs.keys():
+            tools.append(self.service_toolkit.json_schemas[tool])
+
+        response = self.model(self.name, prompt, tools=tools)
+
+        # msg = Msg(self.name, response.text, role="assistant")
+        
+        msg = response.message
+        if self.memory:
+            self.memory.add(msg)
+        
+        tool_calls = self.model.get_tool_calls_from_response(response, error_on_no_tool_call=False)
+
+        if self.verbose:
+            self.speak(response.stream or response.text)
+        return msg
