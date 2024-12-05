@@ -74,7 +74,7 @@ class Msg:
         self,
         name: str,
         content: Any,
-        additional_kwargs: Optional[dict] = None,
+        additional_kwargs: Optional[dict] = {},
         role: Union[str, Literal["system", "user", "assistant", "tool"]] = "assistant",
         url: Optional[Union[str, List[str]]] = None,
         metadata: Optional[dict] = None,
@@ -102,10 +102,8 @@ class Msg:
                 The name of who generates the message.
             content (`Any`):
                 The content of the message.
-            tool_calls (`Optional[List[dict]]`):
-                The tool_calls of the message.
-            tool_call_id (`Optional[str]`):
-                The id of the tool.
+            additional_kwargs (`Optional[dict]`):
+                The additional_kwargs of the message.
             role (`Union[str, Literal["system", "user", "assistant", "tool"]]`,):
                 The role of the message sender.
             url (`Optional[Union[str, List[str]]`, defaults to `None`):
@@ -218,10 +216,10 @@ class Msg:
     def role(self, value: Literal["system", "user", "assistant"]) -> None:
         """Set the role of the message sender. The role must be one of
         'system', 'user', 'assistant'."""
-        if value not in ["system", "user", "assistant"]:
+        if value not in ["system", "user", "assistant", "tool"]:
             raise ValueError(
                 f"Invalid role {value}. The role must be one of "
-                f"['system', 'user', 'assistant']",
+                f"['system', 'user', 'assistant', 'tool']",
             )
         self._role = value
 

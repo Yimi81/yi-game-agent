@@ -2,9 +2,9 @@ import yi_game_agent
 from yi_game_agent.agents import DialogAgent,FnCallAgent
 from yi_game_agent.message import Msg
 
-from yi_game_agent.tools import ServiceToolkit, ServiceResponse
+from yi_game_agent.tools import ServiceToolkit, ServiceResponse, ServiceExecStatus
 
-def web_serarch(query: str, engine: str, api_key: str, num_results: int = 10):
+def web_serarch(query: str, engine: str, api_key: str, num_results: int = 10) -> ServiceResponse:
     """
     Search the web using the given search engine.
 
@@ -18,9 +18,10 @@ def web_serarch(query: str, engine: str, api_key: str, num_results: int = 10):
         List[str]: The search results.
     """
     # Search the web using the given search engine
-    print(f"Searching the web using {engine} with query: {query} and API key: {api_key}")
+    data = f"Searching the web using {engine} with query: {query} and API key: {api_key}"
 
-def get_weather(location, unit):
+    return ServiceResponse(ServiceExecStatus.SUCCESS, data)
+def get_weather(location, unit) -> ServiceResponse:
     """
     Get the weather information for a specified location.
 
@@ -46,7 +47,7 @@ def get_weather(location, unit):
         "description": "Clear"
     }
 
-    return sample_weather_data
+    return ServiceResponse(ServiceExecStatus.SUCCESS, sample_weather_data)
 
 
 service_toolkit = ServiceToolkit()

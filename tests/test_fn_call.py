@@ -9,7 +9,7 @@ def send_messages(messages):
     return response.choices[0].message
 
 client = OpenAI(
-    api_key="4f19cb40008658523cc58ea7f5",
+    api_key="sk-90bb5d4f19cb40008658523cc58ea7f5",
     base_url="https://api.deepseek.com",
 )
 
@@ -45,4 +45,4 @@ messages.append(message)
 messages.append({"role": "tool", "tool_call_id": tool.id, "content": "24℃"})
 print(f"second send messages>\t {messages}")
 message = send_messages(messages)
-print(f"Model>\t {message.content}")
+print(f"Model>\t {message}")

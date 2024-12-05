@@ -121,3 +121,11 @@ class ModelResponse:
             "raw": raw,
         }
         return json.dumps(serialized_fields, indent=4, ensure_ascii=False)
+
+    def get_tool_calls(self) -> list[dict]:
+        """Get the tool calls from the response.
+
+        Returns:
+            `list[dict]`: The tool calls.
+        """
+        return self.message.additional_kwargs.get("tool_calls", [])

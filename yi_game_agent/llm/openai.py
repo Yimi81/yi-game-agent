@@ -290,15 +290,39 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
             if _verify_text_content_in_openai_message_response(response):
                 openai_message = response["choices"][0]["message"]
 
-                if openai_message["tool_calls"]:
+                tool_calls = openai_message.get("tool_calls", [])
+                if tool_calls:
+                    tool_selections = []
+                    for tool_call in tool_calls:
+
+                        tool_selections.append(
+                            {
+                                "id": tool_call["id"],
+                                "type": tool_call["type"],
+                                "function": {
+                                    "name": tool_call["function"]["name"],
+                                    "arguments": tool_call["function"]["arguments"],
+                                },
+                            }
+                        )
                     return ModelResponse(
-                        message=Msg(name=name, content=openai_message["content"], additional_kwargs={"tool_calls": openai_message["tool_calls"]}, role=openai_message["role"]),
+                        message=Msg(
+                            name=name,
+                            content=openai_message["content"],
+                            additional_kwargs={"tool_calls": tool_selections},
+                            role=openai_message["role"],
+                        ),
                         text=openai_message["content"],
-                        raw=response,)
-                
+                        raw=response,
+                    )
+
                 # return response
                 return ModelResponse(
-                    message=Msg(name=name, content=openai_message["content"], role=openai_message["role"]),
+                    message=Msg(
+                        name=name,
+                        content=openai_message["content"],
+                        role=openai_message["role"],
+                    ),
                     text=openai_message["content"],
                     raw=response,
                 )
@@ -412,33 +436,37 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
                         model_name,
                     )
                     messages.append(formatted_msg)
-                elif (
-                    arg.role == "assistant"
-                    and arg.content is None
-                    and arg.tool_calls is not None
-                ):
-                    messages.append(
-                        {
-                            "role": arg.role,
-                            "tool_calls": arg.tool_calls,
-                        },
-                    )
-                elif arg.role == "tool":
-                    messages.append(
-                        {
-                            "role": arg.role,
-                            "tool_call_id": arg.tool_call_id,
-                            "content": _convert_to_str(arg.content),
-                        },
-                    )
                 else:
-                    messages.append(
-                        {
-                            "role": arg.role,
-                            "name": arg.name,
-                            "content": _convert_to_str(arg.content),
-                        },
-                    )
+                    if arg.role == "tool":
+                        messages.append(
+                            {
+                                "role": arg.role,
+                                "name": arg.name,
+                                "content": _convert_to_str(arg.content),
+                                "tool_call_id": arg.additional_kwargs.get(
+                                    "tool_call_id", []
+                                ),
+                            },
+                        )
+                    elif arg.content != "":
+                        messages.append(
+                            {
+                                "role": arg.role,
+                                "name": arg.name,
+                                "content": _convert_to_str(arg.content),
+                            },
+                        )
+                    else:
+                        messages.append(
+                            {
+                                "role": arg.role,
+                                "name": arg.name,
+                                "content": _convert_to_str(arg.content),
+                                "tool_calls": arg.additional_kwargs.get(
+                                    "tool_calls", []
+                                ),
+                            },
+                        )
 
             elif isinstance(arg, list):
                 messages.extend(
@@ -485,33 +513,3 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
         else:
             # The OpenAI library maybe re-used to support other models
             return ModelWrapperBase.format_for_common_chat_models(*args)
-
-    def get_tool_calls_from_response(
-        self,
-        response: "ModelResponse",
-        error_on_no_tool_call: bool = True,
-    ) -> List[dict]:
-        """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-
-        if len(tool_calls) < 1:
-            if error_on_no_tool_call:
-                raise ValueError(
-                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
-                )
-            else:
-                return []
-
-        tool_selections = []
-        for tool_call in tool_calls:
-            argument_dict = tool_call["function"]["arguments"]
-
-            tool_selections.append(
-                {
-                    "tool_id": tool_call["id"],
-                    "tool_name": tool_call["function"]["name"],
-                    "tool_kwargs": argument_dict,
-                }
-            )
-
-        return tool_selections

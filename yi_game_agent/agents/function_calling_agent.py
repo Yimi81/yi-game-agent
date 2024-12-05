@@ -35,25 +35,42 @@ class FnCallAgent(AgentBase):
         """The reply method of the agent"""
         self.memory.add(x)
 
-        prompt = self.model.format(
-            Msg("system", self.sys_prompt, role="system"),
-            self.memory and self.memory.get_memory() or x,  # type: ignore[arg-type]
-        )
+        for _ in range(self.max_iters):
+            prompt = self.model.format(
+                self.memory and self.memory.get_memory() or x,  # type: ignore[arg-type]
+            )
 
-        tools = []
-        for tool in self.service_toolkit.service_funcs.keys():
-            tools.append(self.service_toolkit.json_schemas[tool])
+            tools = []
+            for tool in self.service_toolkit.service_funcs.keys():
+                tools.append(self.service_toolkit.json_schemas[tool])
 
-        response = self.model(self.name, prompt, tools=tools)
+            response = self.model(self.name, prompt, tools=tools)
 
-        # msg = Msg(self.name, response.text, role="assistant")
-        
-        msg = response.message
-        if self.memory:
-            self.memory.add(msg)
-        
-        tool_calls = self.model.get_tool_calls_from_response(response, error_on_no_tool_call=False)
+            # msg = Msg(self.name, response.text, role="assistant")
 
-        if self.verbose:
-            self.speak(response.stream or response.text)
-        return msg
+            msg = response.message
+            if self.memory:
+                self.memory.add(msg)
+
+            tool_calls = response.get_tool_calls()
+
+            if len(tool_calls) != 0:
+                for i, tool_call in enumerate(tool_calls):
+                    tool_output = self.service_toolkit._call_tool(
+                        tool_call=tool_call, verbose=True
+                    )
+
+                    funtion_message = Msg(
+                        name=self.name,
+                        content=tool_output,
+                        role="tool",
+                        additional_kwargs={
+                            "name": tool_call["function"]["name"],
+                            "tool_call_id": tool_call["id"],
+                        },
+                    )
+                    self.memory.add(funtion_message)
+            else:
+                if self.verbose:
+                    self.speak(response.stream or response.text)
+                return msg

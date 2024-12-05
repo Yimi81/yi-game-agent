@@ -1,4 +1,5 @@
 """Service Toolkit for service function usage."""
+
 import json
 from functools import partial
 import inspect
@@ -102,9 +103,7 @@ class ServiceFunction:
 
         self.require_args = (
             len(
-                json_schema["function"]
-                .get("parameters", {})
-                .get("required", []),
+                json_schema["function"].get("parameters", {}).get("required", []),
             )
             != 0
         )
@@ -213,8 +212,7 @@ class ServiceToolkit:
         name = service_func.__name__
         if name in self.service_funcs:
             logger.warning(
-                f"Service function `{name}` already exists, "
-                f"skip adding it.",
+                f"Service function `{name}` already exists, " f"skip adding it.",
             )
         else:
             self.service_funcs[name] = ServiceFunction(
@@ -250,9 +248,7 @@ class ServiceToolkit:
                         f'{args_info.get("description", "")}'
                     )
                 else:
-                    args_line = (
-                        f'\t{args_name}: {args_info.get("description", "")}'
-                    )
+                    args_line = f'\t{args_name}: {args_info.get("description", "")}'
                 args_list.append(args_line)
 
             func_prompt = "\n".join(args_list)
@@ -395,9 +391,7 @@ class ServiceToolkit:
                 )
 
             status = (
-                "SUCCESS"
-                if func_res.status == ServiceExecStatus.SUCCESS
-                else "FAILED"
+                "SUCCESS" if func_res.status == ServiceExecStatus.SUCCESS else "FAILED"
             )
 
             arguments = [f"{k}: {v}" for k, v in kwargs.items()]
@@ -522,9 +516,7 @@ class ServiceToolkit:
         args_agent = set(argsspec.args) - set(kwargs.keys()) - {"self", "cls"}
 
         # Check if the arguments from agent have descriptions in docstring
-        args_description = {
-            _.arg_name: _.description for _ in docstring.params
-        }
+        args_description = {_.arg_name: _.description for _ in docstring.params}
 
         # Prepare default values
         if argsspec.defaults is None:
@@ -542,9 +534,7 @@ class ServiceToolkit:
         )
 
         # Prepare types of the arguments, remove the return type
-        args_types = {
-            k: v for k, v in argsspec.annotations.items() if k != "return"
-        }
+        args_types = {k: v for k, v in argsspec.annotations.items() if k != "return"}
 
         # Prepare argument dictionary
         properties_field = {}
@@ -557,8 +547,7 @@ class ServiceToolkit:
                     arg_property["type"] = required_type
                 except Exception:
                     logger.warning(
-                        f"Fail and skip to get the type of the "
-                        f"argument `{key}`.",
+                        f"Fail and skip to get the type of the " f"argument `{key}`.",
                     )
 
                 # For Literal type, add enum field
@@ -590,3 +579,42 @@ class ServiceToolkit:
         }
 
         return tool_func, func_dict
+
+    def _call_tool(self, tool_call: dict, verbose: bool = False):
+        id = tool_call["id"]
+        name = tool_call["function"]["name"]
+        arguments_str = tool_call["function"]["arguments"]
+        arguments = json.loads(arguments_str)
+
+        if verbose:
+            print("=== Calling Function ===")
+            print(f"Calling function: {name} with args: {arguments_str}")
+
+        tool = self.service_funcs[name]
+
+        # Execute the function
+        try:
+            func_res = tool.processed_func(**arguments)
+        except Exception as e:
+            func_res = ServiceResponse(
+                status=ServiceExecStatus.ERROR,
+                content=str(e),
+            )
+
+        status = "SUCCESS" if func_res.status == ServiceExecStatus.SUCCESS else "FAILED"
+
+        execute_res = self._tools_execution_format.format_map(
+            {
+                "index": id,
+                "function_name": name,
+                "arguments": arguments_str,
+                "status": status,
+                "result": func_res.content,
+            },
+        )
+
+        if verbose:
+            print("=== Function Output ===")
+            print(func_res.content)
+
+        return func_res.content
