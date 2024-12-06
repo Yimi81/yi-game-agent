@@ -8,7 +8,10 @@ from yi_game_agent.agents import FnCallAgent
 
 from yi_game_agent.tools import ServiceToolkit, ServiceResponse, ServiceExecStatus
 
-def web_serarch(query: str, engine: str, api_key: str, num_results: int = 10) -> ServiceResponse:
+
+def web_serarch(
+    query: str, engine: str, api_key: str, num_results: int = 10
+) -> ServiceResponse:
     """
     Search the web using the given search engine.
 
@@ -22,9 +25,13 @@ def web_serarch(query: str, engine: str, api_key: str, num_results: int = 10) ->
         List[str]: The search results.
     """
     # Search the web using the given search engine
-    data = f"Searching the web using {engine} with query: {query} and API key: {api_key}"
+    data = (
+        f"Searching the web using {engine} with query: {query} and API key: {api_key}"
+    )
 
     return ServiceResponse(ServiceExecStatus.SUCCESS, data)
+
+
 def get_weather(location, unit) -> ServiceResponse:
     """
     Get the weather information for a specified location.
@@ -39,16 +46,16 @@ def get_weather(location, unit) -> ServiceResponse:
     # Validate parameters
     if not isinstance(location, str):
         raise TypeError("location must be a string")
-    if unit not in ['c', 'f']:
+    if unit not in ["c", "f"]:
         raise ValueError("unit must be 'c' or 'f'")
 
     # Simulate getting weather information
     # In practice, you would call a real weather API here
     sample_weather_data = {
         "location": location,
-        "temperature": 20 if unit == 'c' else 68,
+        "temperature": 20 if unit == "c" else 68,
         "unit": unit,
-        "description": "Clear"
+        "description": "Clear",
     }
 
     return ServiceResponse(ServiceExecStatus.SUCCESS, sample_weather_data)
@@ -62,15 +69,15 @@ def respond(
     temperature,
     top_p,
 ):
-    # history_openai_format = []
-    # for human, assistant in history:
-    #     history_openai_format.append(ChatMessage(role="user", content=human))
-    #     history_openai_format.append(ChatMessage(role="assistant", content=assistant))
+    # 调用代理，获取响应。可能是单一消息，也可能是一个流式生成器。
+    response_or_gen = bot(Msg(name="user", role="user", content=message))
 
-    response = bot(Msg(name="user", role="user", content=message))
-
-    return response.content
-
+    # 如果返回的不是生成器，说明是一次性输出
+    if isinstance(response_or_gen, Msg):
+        return response_or_gen.content
+    else:
+        for msg_chunk in response_or_gen:
+            yield msg_chunk.content
 
 """
 For information on how to customize the ChatInterface, peruse the gradio docs: https://www.gradio.app/docs/chatinterface
@@ -133,25 +140,22 @@ if __name__ == "__main__":
         "client_args": {
             "base_url": "https://api.deepseek.com",
         },
-        "stream": False,
+        "stream": True,
     }
 
     yi_game_agent.init(model_configs=[deepseek_model_config])
 
-
-
     service_toolkit = ServiceToolkit()
 
-    service_toolkit.add(
-        web_serarch,
-        api_key="xxx",
-        num_results=3
-    )
+    service_toolkit.add(web_serarch, api_key="xxx", num_results=3)
 
-    service_toolkit.add(
-        get_weather
+    service_toolkit.add(get_weather)
+    bot = FnCallAgent(
+        name="Guofeng Yi",
+        model_config_name="deepseek-chat",
+        sys_prompt="You are a new student in Anhui University.",
+        service_toolkit=service_toolkit,
     )
-    bot = FnCallAgent(name="Guofeng Yi", model_config_name="deepseek-chat", sys_prompt="You are a new student in Anhui University.", service_toolkit=service_toolkit)
 
     demo.launch(
         server_name=args.server_name,

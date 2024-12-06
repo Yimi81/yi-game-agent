@@ -16,6 +16,7 @@ from loguru import logger
 from ._llm_utils import (
     _verify_text_content_in_openai_delta_response,
     _verify_text_content_in_openai_message_response,
+    _update_tool_calls,
 )
 from .base import ModelWrapperBase, ModelResponse
 from ..message import Msg
@@ -184,7 +185,7 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
         messages: list[dict],
         stream: Optional[bool] = None,
         **kwargs: Any,
-    ) -> ModelResponse:
+    ) -> Union[ModelResponse, Generator[ModelResponse, None, None]]:
         """Processes a list of messages to construct a payload for the OpenAI
         API call. It then makes a request to the OpenAI API and returns the
         response. This method also updates monitoring metrics based on the
@@ -262,28 +263,34 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
 
         if stream:
 
-            def generator() -> Generator[str, None, None]:
-                text = ""
-                last_chunk = {}
+            def generator() -> Generator[ModelResponse, None, None]:
+                content = ""
+                tool_calls: List[dict] = []
                 for chunk in response:
                     chunk = chunk.model_dump()
-                    if _verify_text_content_in_openai_delta_response(chunk):
-                        text += chunk["choices"][0]["delta"]["content"]
-                        yield text
-                    last_chunk = chunk
+                    delta = chunk["choices"][0]["delta"]
+                    role = delta["role"] or "assistant"
+                    additional_kwargs = {}
 
-                # Update the last chunk to save locally
-                if last_chunk.get("choices", []) in [None, []]:
-                    last_chunk["choices"] = [{}]
+                    if delta["tool_calls"]:
+                        tool_calls = _update_tool_calls(tool_calls, delta["tool_calls"])
+                        additional_kwargs["tool_calls"] = tool_calls
 
-                last_chunk["choices"][0]["message"] = {
-                    "role": "assistant",
-                    "content": text,
-                }
+                    content_delta = delta["content"] or ""
+                    content += content_delta
 
-            return ModelResponse(
-                stream=generator(),
-            )
+                    yield ModelResponse(
+                        message=Msg(
+                            name=name,
+                            content=content,
+                            additional_kwargs=additional_kwargs,
+                            role=role,
+                        ),
+                        text=content_delta,
+                        raw=chunk,
+                    )
+
+            return generator()
         else:
             response = response.model_dump()
 
@@ -505,7 +512,7 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
         """
 
         # Format messages according to the model name
-        if self.model_name.startswith("gpt-"):
+        if self.model_name.startswith("gpt-") or self.model_name.startswith("deepseek"):
             return OpenAIChatWrapper.static_format(
                 *args,
                 model_name=self.model_name,

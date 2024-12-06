@@ -158,7 +158,7 @@ class Msg:
     def additional_kwargs(self) -> Optional[dict]:
         """The content of the message."""
         return self._additional_kwargs
-    
+
     @property
     def role(self) -> Literal["system", "user", "assistant"]:
         """The role of the message sender, chosen from 'system', 'user',
@@ -211,16 +211,10 @@ class Msg:
             )
         self._additional_kwargs = value
 
-
     @role.setter  # type: ignore[no-redef]
     def role(self, value: Literal["system", "user", "assistant"]) -> None:
         """Set the role of the message sender. The role must be one of
-        'system', 'user', 'assistant'."""
-        if value not in ["system", "user", "assistant", "tool"]:
-            raise ValueError(
-                f"Invalid role {value}. The role must be one of "
-                f"['system', 'user', 'assistant', 'tool']",
-            )
+        'system', 'user', 'assistant', 'tool'."""
         self._role = value
 
     @url.setter  # type: ignore[no-redef]

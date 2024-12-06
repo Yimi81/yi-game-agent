@@ -1,9 +1,9 @@
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, Generator
 
 from yi_game_agent.agents import AgentBase
 from yi_game_agent.message import Msg
 from yi_game_agent.tools import ServiceToolkit, ServiceResponse, ServiceExecStatus
-
+from yi_game_agent.llm.base import ModelResponse
 
 class FnCallAgent(AgentBase):
     def __init__(
@@ -20,7 +20,6 @@ class FnCallAgent(AgentBase):
         )
 
         self.service_toolkit = service_toolkit
-
         self.verbose = verbose
         self.max_iters = max_iters
 
@@ -28,11 +27,10 @@ class FnCallAgent(AgentBase):
             sys_prompt = sys_prompt + "\n"
 
         self.sys_prompt = sys_prompt.format(name=self.name)
-
         self.memory.add(Msg("system", self.sys_prompt, role="system"))
 
-    def reply(self, x: Optional[Union[Msg, Sequence[Msg]]] = None) -> Msg:
-        """The reply method of the agent"""
+    def reply(self, x: Optional[Union[Msg, Sequence[Msg]]] = None) -> Union[Msg, Generator[Msg, None, None]]:
+        """Agent reply method, now supporting streaming output."""
         self.memory.add(x)
 
         for _ in range(self.max_iters):
@@ -46,31 +44,50 @@ class FnCallAgent(AgentBase):
 
             response = self.model(self.name, prompt, tools=tools)
 
-            # msg = Msg(self.name, response.text, role="assistant")
-
-            msg = response.message
-            if self.memory:
-                self.memory.add(msg)
-
-            tool_calls = response.get_tool_calls()
-
-            if len(tool_calls) != 0:
-                for i, tool_call in enumerate(tool_calls):
-                    tool_output = self.service_toolkit._call_tool(
-                        tool_call=tool_call, verbose=True
-                    )
-
-                    funtion_message = Msg(
-                        name=self.name,
-                        content=tool_output,
-                        role="tool",
-                        additional_kwargs={
-                            "name": tool_call["function"]["name"],
-                            "tool_call_id": tool_call["id"],
-                        },
-                    )
-                    self.memory.add(funtion_message)
+            # 如果是流式输出（response是一个生成器）
+            if isinstance(response, Generator):
+                # 流式处理
+                return self._handle_stream(response)
             else:
-                if self.verbose:
-                    self.speak(response.stream or response.text)
-                return msg
+                # 非流式输出，直接处理工具调用并返回最终消息
+                msg = response.message
+                self.memory.add(msg)
+                tool_calls = response.get_tool_calls()
+                if tool_calls:
+                    for tool_call in tool_calls:
+                        tool_output = self.service_toolkit._call_tool(
+                            tool_call=tool_call, verbose=True
+                        )
+                        function_message = Msg(
+                            name=self.name,
+                            content=tool_output,
+                            role="tool",
+                            additional_kwargs={
+                                "name": tool_call["function"]["name"],
+                                "tool_call_id": tool_call["id"],
+                            },
+                        )
+                        self.memory.add(function_message)
+                    # 工具调用后可考虑继续迭代，如果需要
+                else:
+                    if self.verbose:
+                        self.speak(msg.content)
+                    return msg
+
+    def _handle_stream(
+        self, response_gen: Generator[ModelResponse, None, None]
+    ) -> Generator[Msg, None, None]:
+        """处理流式输出的生成器。对每块输出检查是否有工具调用，有则执行并将结果回流。"""
+        final_message = None
+        for chunk_response in response_gen:
+            msg = chunk_response.message
+            tool_calls = msg.additional_kwargs.get("tool_calls", [])
+
+            # if self.verbose:
+            #     self.speak(msg.content)
+            yield msg
+            final_message = msg
+
+        self.memory.add(final_message)
+
+        return final_message
