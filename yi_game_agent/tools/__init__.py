@@ -5,7 +5,7 @@ from loguru import logger
 from .service_response import ServiceResponse
 from .service_toolkit import ServiceToolkit
 from .service_status import ServiceExecStatus
-
+from .weather_tool.weather_tool import get_weather
 
 def get_help() -> None:
     """Get help message."""
@@ -21,4 +21,5 @@ __all__ = [
     "ServiceExecStatus",
     "ServiceToolkit",
     "get_help",
+    "get_weather",
 ]

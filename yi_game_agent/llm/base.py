@@ -277,13 +277,13 @@ class ModelWrapperBase(metaclass=_ModelWrapperMeta):
                         )
                     else:
                         dialogue.append(
-                            f"role: {unit.role}, name: {unit.name}, content: {_convert_to_str(unit.content)}, tool_calls: {unit.additional_kwargs.get(
+                            f"""role: {unit.role}, name: {unit.name}, content: {_convert_to_str(unit.content)}, tool_calls: {_convert_to_str(unit.additional_kwargs.get(
                                     "tool_calls", []
-                                )}",
+                                ))}""",
                         )
                 else:
                     dialogue.append(
-                        f"role: {unit.role}, name: {unit.name}, tool_call_id: {_convert_to_str(unit.additional_kwargs.get("tool_call_id", ""))}, content: {_convert_to_str(unit.content)}",
+                        f"role: {unit.role}, name: {unit.name}, tool_call_id: {_convert_to_str(unit.additional_kwargs.get('tool_call_id', ''))}, content: {_convert_to_str(unit.content)}",
                     )
 
         content_components = []

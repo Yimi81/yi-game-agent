@@ -512,7 +512,7 @@ class OpenAIChatWrapper(OpenAIWrapperBase):
         """
 
         # Format messages according to the model name
-        if self.model_name.startswith("gpt-") or self.model_name.startswith("deepseek"):
+        if self.model_name.startswith("gpt-"):
             return OpenAIChatWrapper.static_format(
                 *args,
                 model_name=self.model_name,

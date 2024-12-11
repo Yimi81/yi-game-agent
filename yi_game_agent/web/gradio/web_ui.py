@@ -6,59 +6,12 @@ import yi_game_agent
 from yi_game_agent.message import Msg
 from yi_game_agent.agents import FnCallAgent
 
-from yi_game_agent.tools import ServiceToolkit, ServiceResponse, ServiceExecStatus
-
-
-def web_serarch(
-    query: str, engine: str, api_key: str, num_results: int = 10
-) -> ServiceResponse:
-    """
-    Search the web using the given search engine.
-
-    Args:
-        query: The query string.
-        engine: The search engine to use.
-        api_key: The API key for the search engine.
-        num_results: The number of results to return.
-
-    Returns:
-        List[str]: The search results.
-    """
-    # Search the web using the given search engine
-    data = (
-        f"Searching the web using {engine} with query: {query} and API key: {api_key}"
-    )
-
-    return ServiceResponse(ServiceExecStatus.SUCCESS, data)
-
-
-def get_weather(location, unit) -> ServiceResponse:
-    """
-    Get the weather information for a specified location.
-
-    Args:
-        location (str): The location for which to get the weather.
-        unit (str): The temperature unit, 'c' for Celsius, 'f' for Fahrenheit.
-
-    Returns:
-        dict: A dictionary containing weather information.
-    """
-    # Validate parameters
-    if not isinstance(location, str):
-        raise TypeError("location must be a string")
-    if unit not in ["c", "f"]:
-        raise ValueError("unit must be 'c' or 'f'")
-
-    # Simulate getting weather information
-    # In practice, you would call a real weather API here
-    sample_weather_data = {
-        "location": location,
-        "temperature": 20 if unit == "c" else 68,
-        "unit": unit,
-        "description": "Clear",
-    }
-
-    return ServiceResponse(ServiceExecStatus.SUCCESS, sample_weather_data)
+from yi_game_agent.tools import (
+    ServiceToolkit,
+    ServiceResponse,
+    ServiceExecStatus,
+    get_weather,
+)
 
 
 def respond(
@@ -74,10 +27,11 @@ def respond(
 
     # 如果返回的不是生成器，说明是一次性输出
     if isinstance(response_or_gen, Msg):
-        return response_or_gen.content
+        yield response_or_gen.content
     else:
         for msg_chunk in response_or_gen:
             yield msg_chunk.content
+
 
 """
 For information on how to customize the ChatInterface, peruse the gradio docs: https://www.gradio.app/docs/chatinterface
@@ -113,7 +67,7 @@ if __name__ == "__main__":
         help="Automatically launch the interface in a new tab on the default browser.",
     )
     parser.add_argument(
-        "--server-port", type=int, default=8233, help="Demo server port."
+        "--server-port", type=int, default=8333, help="Demo server port."
     )
     parser.add_argument(
         "--server-name", type=str, default="0.0.0.0", help="Demo server name."
@@ -140,20 +94,52 @@ if __name__ == "__main__":
         "client_args": {
             "base_url": "https://api.deepseek.com",
         },
-        "stream": True,
+        "stream": False,
     }
 
-    yi_game_agent.init(model_configs=[deepseek_model_config])
+    kimi_model_config = {
+        "config_name": "kimi-chat",
+        "model_type": "openai_chat",
+        "model_name": "moonshot-v1-8k",
+        "api_key": "sk-Z2oDnJORljxciPYHj45taQ8obz18uM5y0X9SWD3b3YmgsaTk",
+        "client_args": {
+            "base_url": "https://api.moonshot.cn/v1",
+        },
+        "stream": False,
+    }
+
+    yi_model_config = {
+        "config_name": "yi-chat",
+        "model_type": "openai_chat",
+        "model_name": "yi-large-fc",
+        "api_key": "f72a48de1f8d45cebd88c16273af6b4d",
+        "client_args": {
+            "base_url": "https://api.lingyiwanwu.com/v1",
+        },
+        "stream": False,
+    }
+
+    qwen_office_model_config = {
+        "config_name": "qwen-office-chat",
+        "model_type": "openai_chat",
+        "model_name": "qwen-plus",
+        "api_key": "sk-fc0300ba2aef4a48ab9bb9474d6b7077",
+        "stream": False,
+        "client_args": {
+            "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        },
+    }
+
+    yi_game_agent.init(model_configs=[qwen_office_model_config, deepseek_model_config, yi_model_config])
 
     service_toolkit = ServiceToolkit()
 
-    service_toolkit.add(web_serarch, api_key="xxx", num_results=3)
-
     service_toolkit.add(get_weather)
+
     bot = FnCallAgent(
         name="Guofeng Yi",
-        model_config_name="deepseek-chat",
-        sys_prompt="You are a new student in Anhui University.",
+        model_config_name="qwen-office-chat",
+        sys_prompt="You are a helpful assistant",
         service_toolkit=service_toolkit,
     )
 
