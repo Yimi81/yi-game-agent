@@ -13,6 +13,7 @@ MSG_TOKEN = f"[{PACKAGE_NAME}_msg]"
 # default values
 _RUNTIME_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 _RUNTIME_ID_FORMAT = "run_%Y%m%d-%H%M%S_{}"
+_DEFAULT_AGENT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # for file manager
 _DEFAULT_SAVE_DIR = "./runs"
@@ -33,7 +34,8 @@ _DEFAULT_CACHE_DIR = str(
 _DEFAULT_CFG_NAME = ".config"
 _DEFAULT_IMAGE_NAME = "image_{}_{}.png"
 _DEFAULT_SQLITE_DB_NAME = "yi-game-agent.db"
-
+_DEFAULT_UE_DOCS = os.path.join(_DEFAULT_AGENT_ROOT, "data/ue")
+_DEFAULT_UNITY_DOCS = os.path.join(_DEFAULT_AGENT_ROOT, "data/unity")
 
 # for model wrapper
 _DEFAULT_MAX_RETRIES = 3
